@@ -422,42 +422,28 @@
         const startISO = startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         const endISO = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         
-        // Create ICS content for single event (not subscription)
-        const icsContent = [
-          'BEGIN:VCALENDAR',
-          'VERSION:2.0',
-          'PRODID:-//Door4//Calendar Agent Demo//EN',
-          'CALSCALE:GREGORIAN',
-          'METHOD:PUBLISH',
-          'BEGIN:VEVENT',
-          `UID:${cryptoRandom()}@door4-demo`,
-          `SUMMARY:${title}`,
-          `DTSTART:${startISO}`,
-          `DTEND:${endISO}`,
-          `LOCATION:${location}`,
-          `DESCRIPTION:${notes}`,
-          `ATTENDEE;CN=Leon Calverley;ROLE=REQ-PARTICIPANT:mailto:${MY_EMAIL}`,
-          'STATUS:CONFIRMED',
-          'TRANSP:OPAQUE',
-          'END:VEVENT',
-          'END:VCALENDAR'
-        ].join('\r\n');
+        // Try to use the Google Calendar app URL scheme for iOS
+        const googleCalendarURL = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startISO}/${endISO}&location=${encodeURIComponent(location)}&details=${encodeURIComponent(notes)}&add=${encodeURIComponent(MY_EMAIL)}`;
         
-        // Create blob and download link that works on iOS
-        const blob = new Blob([icsContent], {type: "text/calendar;charset=utf-8"});
-        const url = URL.createObjectURL(blob);
-        
-        // Create a temporary link and trigger download
+        // Try to open with Google Calendar app first
         const link = document.createElement('a');
-        link.href = url;
-        link.download = 'door4-calendar-event.ics';
+        link.href = googleCalendarURL;
+        link.target = '_blank';
         link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
-        // Clean up the URL object
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        // If that doesn't work, try the Apple Calendar app URL scheme
+        setTimeout(() => {
+          const appleCalendarURL = `calshow://${startDate.getTime() / 1000}`;
+          const appleLink = document.createElement('a');
+          appleLink.href = appleCalendarURL;
+          appleLink.style.display = 'none';
+          document.body.appendChild(appleLink);
+          appleLink.click();
+          document.body.removeChild(appleLink);
+        }, 1000);
         
       } catch (err) {
         // Fallback to regular ICS download if this method fails
