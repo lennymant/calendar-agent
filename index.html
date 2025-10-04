@@ -438,21 +438,33 @@
           'END:VCALENDAR'
         ].join('\r\n');
         
-        // Create blob and download link that works on iOS
-        const blob = new Blob([icsContent], {type: "text/calendar;charset=utf-8"});
-        const url = URL.createObjectURL(blob);
+        // Try to use webcal:// protocol first (opens calendar app directly)
+        const webcalURL = `webcal://calendar.google.com/calendar/event?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startISO}/${endISO}&location=${encodeURIComponent(location)}&details=${encodeURIComponent(notes)}&add=${encodeURIComponent(MY_EMAIL)}`;
         
-        // Create a temporary link and trigger download
+        // Try webcal first, fallback to ICS download
         const link = document.createElement('a');
-        link.href = url;
-        link.download = 'door4-calendar-event.ics';
+        link.href = webcalURL;
+        link.target = '_blank';
         link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
-        // Clean up the URL object
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        // If webcal doesn't work, fallback to ICS download after a short delay
+        setTimeout(() => {
+          const blob = new Blob([icsContent], {type: "text/calendar;charset=utf-8"});
+          const url = URL.createObjectURL(blob);
+          
+          const downloadLink = document.createElement('a');
+          downloadLink.href = url;
+          downloadLink.download = 'door4-calendar-event.ics';
+          downloadLink.style.display = 'none';
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }, 2000);
         
       } catch (err) {
         // Fallback to regular ICS download if this method fails
