@@ -24,75 +24,52 @@
     .actions { display:flex; gap:12px; margin-top:12px; align-items:center; }
     .note { font-size:12px; color:#666666; }
     .pill { font-size:11px; color:#137333; background:#e6f4ea; border:1px solid #34a853; padding:4px 8px; border-radius:999px; margin-left:auto; }
-    .step { display:none; }
-    .step.active { display:block; }
     @media (max-width:720px){ .grid{ grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
   <div class="card">
-    <!-- Step 1: Introduction -->
-    <div id="step1" class="step active">
-      <h1>Thank you for taking part!</h1>
-      <div style="background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:20px; margin:20px 0; line-height:1.6;">
-        <p style="margin:0 0 16px 0; font-size:16px; color:#495057;">
-          This app simply adds a calendar entry into your device calendar. It will invite Leon, and add your mobile number and a couple of details - to test an agent we're building.
-        </p>
-        <p style="margin:0; font-size:16px; color:#495057;">
-          <strong>None of this information is stored, and you'll only receive a message during this test.</strong>
-        </p>
-      </div>
-      <p style="font-size:18px; color:#666; margin:20px 0;">Is that OK?</p>
-      <button class="btn btn-primary" onclick="nextStep()">Next</button>
-    </div>
+    <h1>Door4 - The Knack of AI - Calendar Agent Demo</h1>
+    <p class="hint">Thanks for helping!  Fill this in with anything... it opens Google Calendar prefilled and invites the demo host automatically.</p>
 
-    <!-- Step 2: Verb/Activity -->
-    <div id="step2" class="step">
-      <h1>Great!</h1>
-      <p style="font-size:18px; color:#666; margin:20px 0;">Now, give us a "verb" or action... a sport or something you enjoy doing</p>
-      <div style="margin:20px 0;">
-        <input id="verb" type="text" placeholder="eat / drink / visit / see / run..." style="width:100%; box-sizing:border-box; background:#ffffff; color:#333333; border:1px solid #d0d0d0; border-radius:8px; padding:12px 16px; outline:none; font-size:16px;" />
+    <form id="eventForm" class="grid" onsubmit="handleSubmit(event)">
+      <div class="full">
+        <label for="verb">Give us a verb or activity</label>
+        <input id="verb" type="text" placeholder="eat / drink / visit / see / run..." required />
       </div>
-      <button class="btn btn-primary" onclick="nextStep()">Next</button>
-    </div>
 
-    <!-- Step 3: Location -->
-    <div id="step3" class="step">
-      <h1>Perfect!</h1>
-      <p style="font-size:18px; color:#666; margin:20px 0;">Where might you do this activity? A place, city, country or a landmark - anything goes. Interesting or boring.</p>
-      <div style="margin:20px 0;">
-        <input id="location" type="text" placeholder="e.g. Malaga, Spain" style="width:100%; box-sizing:border-box; background:#ffffff; color:#333333; border:1px solid #d0d0d0; border-radius:8px; padding:12px 16px; outline:none; font-size:16px;" />
+      <div class="full">
+        <label for="location">Give us a place, city or country (anything)</label>
+        <input id="location" type="text" placeholder="e.g. Malaga, Spain" required />
       </div>
-      <button class="btn btn-primary" onclick="nextStep()">Next</button>
-    </div>
 
-    <!-- Step 4: Mobile -->
-    <div id="step4" class="step">
-      <h1>Thanks!</h1>
-      <p style="font-size:18px; color:#666; margin:20px 0;">Now just enter your mobile number. (Again, we won't store this)</p>
-      <div style="margin:20px 0;">
-        <input id="mobile" type="tel" placeholder="+447700900123" style="width:100%; box-sizing:border-box; background:#ffffff; color:#333333; border:1px solid #d0d0d0; border-radius:8px; padding:12px 16px; outline:none; font-size:16px;" />
+      <div class="full">
+        <label for="mobile">Your mobile number</label>
+        <input id="mobile" type="tel" placeholder="+447700900123" required />
       </div>
-      <button class="btn btn-primary" onclick="nextStep()">Next</button>
-    </div>
 
-    <!-- Step 5: Confirmation -->
-    <div id="step5" class="step">
-      <h1>Great!</h1>
-      <div style="background:#e3f2fd; border:1px solid #bbdefb; border-radius:8px; padding:20px; margin:20px 0; line-height:1.6;">
-        <p style="margin:0; font-size:16px; color:#1565c0;">
-          Now we're going to create an entry in your calendar on <strong>Thursday 9th October</strong>, at <strong id="randomTime">[random time]</strong> - please accept it, don't change the details.
+      <!-- Hidden inputs for date and time (managed by JavaScript) -->
+      <input id="date" type="hidden" />
+      <input id="start" type="hidden" />
+
+      <div class="full actions">
+        <button type="submit" class="btn btn-primary">Create event in Google Calendar</button>
+        <button type="button" class="btn btn-ghost" onclick="downloadICS()">Download .ics (Outlook/Apple)</button>
+        <span class="note">We'll prefill title, location, and invite Leon.</span>
+      </div>
+
+      <div class="full" style="background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:16px; margin:16px 0 0 0;">
+        <p style="margin:0; font-size:13px; color:#495057; line-height:1.4;">
+          <strong>Privacy Notice:</strong> We won't store your details in a CRM. You will receive an SMS and an email when we run the agent.
         </p>
       </div>
-      <div style="display:flex; gap:12px; margin:20px 0; flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="createEvent()">Create in Google Calendar</button>
-        <button class="btn btn-ghost" onclick="downloadICS()">Download .ics (Outlook/Apple)</button>
-      </div>
-    </div>
 
-    <!-- Hidden inputs for date and time (managed by JavaScript) -->
-    <input id="date" type="hidden" />
-    <input id="start" type="hidden" />
+      <div class="full" style="background:#e3f2fd; border:1px solid #bbdefb; border-radius:8px; padding:16px; margin:12px 0 0 0;">
+        <p style="margin:0; font-size:13px; color:#1565c0; line-height:1.4;">
+          <strong>Event Details:</strong> Your event will be automatically scheduled for <strong>Thursday, October 9th, 2025</strong> with a random start time. Please keep as the date/time specified. The event will last 1 hour and Leon will be automatically invited.  When run, this simply creates a calendar event, for you to 'confirm'.  It invites Leon - so it appears in his calendar.  Then, we run an AI agent on Leon's calendar which will send you a confirmation later.  You're welcome to delete this tomorrow. (We will delete it later too, if you haven't.)
+        </p>
+      </div>
+    </form>
   </div>
 
   <script>
@@ -289,87 +266,14 @@
       return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     }
 
-    // Multi-step functionality
-    let currentStep = 1;
-    const totalSteps = 5;
-
-    function nextStep() {
-      // Validate current step before proceeding
-      if (currentStep === 2) {
-        const verb = document.getElementById('verb').value.trim();
-        if (!verb) {
-          alert('Please enter a verb or activity');
-          return;
-        }
-      } else if (currentStep === 3) {
-        const location = document.getElementById('location').value.trim();
-        if (!location) {
-          alert('Please enter a location');
-          return;
-        }
-      } else if (currentStep === 4) {
-        const mobile = document.getElementById('mobile').value.trim();
-        if (!mobile) {
-          alert('Please enter your mobile number');
-          return;
-        }
-      }
-
-      // Hide current step
-      document.getElementById(`step${currentStep}`).classList.remove('active');
-      
-      // Show next step
-      currentStep++;
-      document.getElementById(`step${currentStep}`).classList.add('active');
-
-      // If we're on the final step, set the random time
-      if (currentStep === 5) {
-        const randomTime = generateRandomStartTime();
-        document.getElementById('randomTime').textContent = randomTime;
-        document.getElementById('date').value = FIXED_DATE;
-        document.getElementById('start').value = randomTime;
-      }
-    }
-
-    function createEvent() {
-      // Use the existing handleSubmit logic but without the form submission
-      try {
-        const date = document.getElementById("date").value;
-        const start = document.getElementById("start").value;
-        const end = calculateEndTime(start);
-        const verb = document.getElementById("verb").value;
-        const mobile = document.getElementById("mobile").value;
-        const location = document.getElementById("location").value;
-        const notes = ""; // Notes field removed
-        const allDay = false; // All-day option removed
-
-        if (!date || !verb || !mobile || !location) throw new Error("Please fill all required fields.");
-        assertTimesValid(start, end, allDay);
-
-        const title = buildTitle(verb, mobile);
-        const dates = gcalDateRange({ date, start, end, allDay });
-
-        const params = new URLSearchParams({
-          action: "TEMPLATE",
-          text: title,
-          dates,
-          location,
-          details: notes || ""
-        });
-
-        // Add your email as guest; can add multiple &add=value occurrences
-        const url = `https://calendar.google.com/calendar/render?${params.toString()}&add=${encodeURIComponent(MY_EMAIL)}`;
-        window.open(url, "_blank", "noopener");
-      } catch (err) {
-        alert(err.message || String(err));
-      }
+    // Initialize form with fixed date and random start time
+    function initializeForm() {
+      document.getElementById('date').value = FIXED_DATE;
+      document.getElementById('start').value = generateRandomStartTime();
     }
 
     // Initialize form when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-      // Set up the multi-step interface
-      currentStep = 1;
-    });
+    document.addEventListener('DOMContentLoaded', initializeForm);
   </script>
 </body>
 </html>
