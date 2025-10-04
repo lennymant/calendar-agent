@@ -322,6 +322,17 @@
       currentStep++;
       document.getElementById(`step${currentStep}`).classList.add('active');
 
+      // Auto-focus the input field on the new step
+      setTimeout(() => {
+        if (currentStep === 2) {
+          document.getElementById('verb').focus();
+        } else if (currentStep === 3) {
+          document.getElementById('location').focus();
+        } else if (currentStep === 4) {
+          document.getElementById('mobile').focus();
+        }
+      }, 100); // Small delay to ensure the step is visible
+
       // If we're on the final step, set the random time
       if (currentStep === 5) {
         const randomTime = generateRandomStartTime();
@@ -349,17 +360,26 @@
         const title = buildTitle(verb, mobile);
         const dates = gcalDateRange({ date, start, end, allDay });
 
-        const params = new URLSearchParams({
-          action: "TEMPLATE",
-          text: title,
-          dates,
-          location,
-          details: notes || ""
-        });
+        // Check if user is on iPhone/iOS
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        
+        if (isIOS) {
+          // On iOS, use ICS download instead of Google Calendar template
+          downloadICS();
+        } else {
+          // On other devices, use Google Calendar template
+          const params = new URLSearchParams({
+            action: "TEMPLATE",
+            text: title,
+            dates,
+            location,
+            details: notes || ""
+          });
 
-        // Add your email as guest; can add multiple &add=value occurrences
-        const url = `https://calendar.google.com/calendar/render?${params.toString()}&add=${encodeURIComponent(MY_EMAIL)}`;
-        window.open(url, "_blank", "noopener");
+          // Add your email as guest; can add multiple &add=value occurrences
+          const url = `https://calendar.google.com/calendar/render?${params.toString()}&add=${encodeURIComponent(MY_EMAIL)}`;
+          window.open(url, "_blank", "noopener");
+        }
       } catch (err) {
         alert(err.message || String(err));
       }
