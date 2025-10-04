@@ -2,6 +2,12 @@
 
 A simple web form that creates calendar events with automatic guest invitations for the Door4 AI agent demo.
 
+## 🚀 Live Demo
+
+**[Try the Calendar Agent Demo →](https://lennymant.github.io/calendar-agent/)**
+
+The form is hosted on GitHub Pages and ready to use!
+
 ## Features
 
 - **Fixed Date**: Automatically sets to Thursday, October 9th, 2025
