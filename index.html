@@ -419,8 +419,8 @@
         const startISO = startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         const endISO = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         
-        // Create iOS calendar URL
-        const calendarURL = `data:text/calendar;charset=utf8,${encodeURIComponent([
+        // Create ICS content
+        const icsContent = [
           'BEGIN:VCALENDAR',
           'VERSION:2.0',
           'PRODID:-//Door4//Calendar Agent Demo//EN',
@@ -436,13 +436,26 @@
           `ATTENDEE;CN=Leon Calverley;ROLE=REQ-PARTICIPANT:mailto:${MY_EMAIL}`,
           'END:VEVENT',
           'END:VCALENDAR'
-        ].join('\r\n'))}`;
+        ].join('\r\n');
         
-        // Try to open with iOS calendar app
-        window.location.href = calendarURL;
+        // Create blob and download link that works on iOS
+        const blob = new Blob([icsContent], {type: "text/calendar;charset=utf-8"});
+        const url = URL.createObjectURL(blob);
+        
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'door4-calendar-event.ics';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the URL object
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
         
       } catch (err) {
-        // Fallback to ICS download if iOS calendar URL fails
+        // Fallback to regular ICS download if this method fails
         downloadICS();
       }
     }
