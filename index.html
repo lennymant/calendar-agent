@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Door4 - The Knack of AI - Calendar Agent Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+    body { background:#ffffff; color:#333333; margin:0; padding:32px; display:flex; justify-content:center; }
+    .card { width:min(800px, 100%); background:#ffffff; border:1px solid #e0e0e0; border-radius:16px; padding:24px; box-shadow:0 4px 20px rgba(0,0,0,.1); }
+    h1 { margin:0 0 8px; font-size:22px; color:#1a1a1a; }
+    p.hint { margin:0 0 20px; color:#666666; }
+    .grid { display:grid; gap:14px; grid-template-columns:1fr 1fr; }
+    .grid .full { grid-column:1 / -1; }
+    label { display:block; font-size:12px; color:#666666; margin:0 0 6px; letter-spacing:.02em; font-weight:500; }
+    input, textarea, select { width:100%; background:#ffffff; color:#333333; border:1px solid #d0d0d0; border-radius:8px; padding:10px 12px; outline:none; transition:border-color 0.2s; }
+    input:focus, textarea:focus { border-color:#4285f4; box-shadow:0 0 0 3px rgba(66,133,244,.15); }
+    .row { display:flex; gap:12px; }
+    .btn { cursor:pointer; border:0; border-radius:8px; padding:12px 16px; font-weight:600; transition:all 0.2s; }
+    .btn-primary { background:#4285f4; color:#ffffff; }
+    .btn-primary:hover { background:#3367d6; }
+    .btn-ghost { background:transparent; color:#666666; border:1px solid #d0d0d0; }
+    .btn-ghost:hover { background:#f5f5f5; }
+    .actions { display:flex; gap:12px; margin-top:12px; align-items:center; }
+    .note { font-size:12px; color:#666666; }
+    .pill { font-size:11px; color:#137333; background:#e6f4ea; border:1px solid #34a853; padding:4px 8px; border-radius:999px; margin-left:auto; }
+    @media (max-width:720px){ .grid{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Door4 - The Knack of AI - Calendar Agent Demo</h1>
+    <p class="hint">Thanks for helping!  Fill this in with anything... it opens Google Calendar prefilled and invites the demo host automatically.</p>
+
+    <form id="eventForm" class="grid" onsubmit="handleSubmit(event)">
+      <div>
+        <label for="date">Date</label>
+        <input id="date" type="date" required />
+      </div>
+      <div>
+        <label for="start">Start time (anything is fine)</label>
+        <input id="start" type="time" required />
+      </div>
+
+      <div>
+        <label for="verb">Verb (what to do)</label>
+        <input id="verb" type="text" placeholder="eat / drink / visit / see / run..." required />
+      </div>
+      <div>
+        <label for="mobile">Your mobile number (for SMS)</label>
+        <input id="mobile" type="tel" placeholder="+447700900123" required />
+      </div>
+
+      <div class="full">
+        <label for="location">Location (city / venue / address)</label>
+        <input id="location" type="text" placeholder="e.g. Malaga, Spain" required />
+      </div>
+
+
+      <div class="full row" style="align-items:center; justify-content:flex-end; margin-top:4px;">
+        <span class="pill">No sign-in needed — uses Google's template</span>
+      </div>
+
+      <div class="full actions">
+        <button type="submit" class="btn btn-primary">Create event in Google Calendar</button>
+        <button type="button" class="btn btn-ghost" onclick="downloadICS()">Download .ics (Outlook/Apple)</button>
+        <span class="note">We'll prefill title, location, and invite Leon.</span>
+      </div>
+
+      <div class="full" style="background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:16px; margin:16px 0 0 0;">
+        <p style="margin:0; font-size:13px; color:#495057; line-height:1.4;">
+          <strong>Privacy Notice:</strong> We won't store your details in a CRM. You will receive an SMS and an email when we run the agent.
+        </p>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // 🔧 Set this to YOUR address that should be invited
+    const MY_EMAIL = "leon.calverley@door4.com";
+
+    // 🔧 Title format for your parser. Use {verb} and {mobile}.
+    // Example parses "verb" + "mobile" from the title.
+    const TITLE_TEMPLATE = "{verb} :: {mobile}";
+
+    // 🔧 Fixed date configuration - Thursday 09 Oct 2025
+    const FIXED_DATE = "2025-10-09";
+
+    function pad(n){ return String(n).padStart(2,'0'); }
+
+    // Formats a local date/time into Google Calendar TEMPLATE range
+    // Either all-day (YYYYMMDD/YYYYMMDD) or timed UTC (YYYYMMDDTHHMMSSZ/…)
+    function gcalDateRange({ date, start, end, allDay }) {
+      const [y, m, d] = date.split('-').map(Number);
+
+      if (allDay) {
+        // For all-day, end date is exclusive; add one day
+        const startStr = `${y}${pad(m)}${pad(d)}`;
+        const endDate = new Date(Date.UTC(y, m - 1, d));
+        endDate.setUTCDate(endDate.getUTCDate() + 1);
+        const endStr = `${endDate.getUTCFullYear()}${pad(endDate.getUTCMonth()+1)}${pad(endDate.getUTCDate())}`;
+        return `${startStr}/${endStr}`;
+      }
+
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+
+      // Construct as local time, then convert to UTC
+      const startLocal = new Date(y, m - 1, d, sh, sm || 0, 0);
+      const endLocal   = new Date(y, m - 1, d, eh, em || 0, 0);
+
+      const startUTC = new Date(startLocal.getTime() - (startLocal.getTimezoneOffset() * 60000));
+      const endUTC   = new Date(endLocal.getTime()   - (endLocal.getTimezoneOffset()   * 60000));
+
+      const fmt = (dt) =>
+        dt.getUTCFullYear() +
+        pad(dt.getUTCMonth() + 1) +
+        pad(dt.getUTCDate()) + "T" +
+        pad(dt.getUTCHours()) +
+        pad(dt.getUTCMinutes()) +
+        pad(dt.getUTCSeconds()) + "Z";
+
+      return `${fmt(startUTC)}/${fmt(endUTC)}`;
+    }
+
+    function buildTitle(verb, mobile) {
+      return TITLE_TEMPLATE
+        .replace("{verb}", verb.trim())
+        .replace("{mobile}", mobile.trim());
+    }
+
+    function assertTimesValid(start, end, allDay){
+      if (allDay) return;
+      if (!start || !end) throw new Error("Please set both start and end times.");
+      const a = start.split(":").map(Number);
+      const b = end.split(":").map(Number);
+      const aMin = a[0]*60 + (a[1]||0);
+      const bMin = b[0]*60 + (b[1]||0);
+      if (bMin <= aMin) throw new Error("End time must be after start time.");
+    }
+
+    function handleSubmit(e){
+      e.preventDefault();
+      try {
+        const date     = document.getElementById("date").value;
+        const start    = document.getElementById("start").value;
+        const end      = calculateEndTime(start);
+        const verb     = document.getElementById("verb").value;
+        const mobile   = document.getElementById("mobile").value;
+        const location = document.getElementById("location").value;
+        const notes    = ""; // Notes field removed
+        const allDay   = false; // All-day option removed
+
+        if (!date || !verb || !mobile || !location) throw new Error("Please fill date, verb, mobile, and location.");
+        assertTimesValid(start, end, allDay);
+
+        const title = buildTitle(verb, mobile);
+        const dates = gcalDateRange({ date, start, end, allDay });
+
+        const params = new URLSearchParams({
+          action: "TEMPLATE",
+          text: title,
+          dates,
+          location,
+          details: notes || ""
+        });
+
+        // Add your email as guest; can add multiple &add=value occurrences
+        const url = `https://calendar.google.com/calendar/render?${params.toString()}&add=${encodeURIComponent(MY_EMAIL)}`;
+        window.open(url, "_blank", "noopener");
+      } catch (err) {
+        alert(err.message || String(err));
+      }
+    }
+
+    // Optional: .ics for Outlook/Apple
+    function downloadICS(){
+      try {
+        const date     = document.getElementById("date").value;
+        const start    = document.getElementById("start").value;
+        const end      = calculateEndTime(start);
+        const verb     = document.getElementById("verb").value;
+        const mobile   = document.getElementById("mobile").value;
+        const location = document.getElementById("location").value;
+        const notes    = ""; // Notes field removed
+        const allDay   = false; // All-day option removed
+
+        if (!date || !verb || !mobile || !location) throw new Error("Please fill date, verb, mobile, and location.");
+        assertTimesValid(start, end, allDay);
+
+        const title = buildTitle(verb, mobile);
+
+        // Build DTSTART/DTEND in UTC or DATE for all-day
+        const [y, m, d] = date.split('-').map(Number);
+        let dtStart, dtEnd, icsAllDay = false;
+
+        if (allDay) {
+          icsAllDay = true;
+          const startStr = `${y}${pad(m)}${pad(d)}`;
+          const endDate = new Date(Date.UTC(y, m - 1, d));
+          endDate.setUTCDate(endDate.getUTCDate() + 1);
+          const endStr = `${endDate.getUTCFullYear()}${pad(endDate.getUTCMonth()+1)}${pad(endDate.getUTCDate())}`;
+          dtStart = `DTSTART;VALUE=DATE:${startStr}`;
+          dtEnd   = `DTEND;VALUE=DATE:${endStr}`;
+        } else {
+          const dates = gcalDateRange({ date, start, end, allDay:false }).split("/");
+          dtStart = `DTSTART:${dates[0]}`;
+          dtEnd   = `DTEND:${dates[1]}`;
+        }
+
+        const uid = cryptoRandom() + "@agent-demo";
+        const ics = [
+          "BEGIN:VCALENDAR",
+          "VERSION:2.0",
+          "PRODID:-//Agent Demo//EN",
+          "CALSCALE:GREGORIAN",
+          "METHOD:PUBLISH",
+          "BEGIN:VEVENT",
+          `UID:${uid}`,
+          `SUMMARY:${escapeICS(title)}`,
+          `${dtStart}`,
+          `${dtEnd}`,
+          `LOCATION:${escapeICS(location)}`,
+          `DESCRIPTION:${escapeICS(notes)}`,
+          `ATTENDEE;CN=Demo Host;ROLE=REQ-PARTICIPANT:mailto:${MY_EMAIL}`,
+          "END:VEVENT",
+          "END:VCALENDAR"
+        ].join("\r\n");
+
+        const blob = new Blob([ics], {type: "text/calendar;charset=utf-8"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "agent-demo-event.ics";
+        a.click();
+        URL.revokeObjectURL(a.href);
+      } catch (err) {
+        alert(err.message || String(err));
+      }
+    }
+
+    function escapeICS(text){
+      return (text || "")
+        .replace(/\\/g, "\\\\")
+        .replace(/\n/g, "\\n")
+        .replace(/;/g, "\\;")
+        .replace(/,/g, "\\,");
+    }
+
+    function cryptoRandom(){
+      if (crypto && crypto.getRandomValues) {
+        const a = new Uint32Array(4); crypto.getRandomValues(a);
+        return Array.from(a).map(x=>x.toString(16)).join("");
+      }
+      return String(Math.random()).slice(2);
+    }
+
+    // Generate random start time in half-hourly intervals (00:00 to 23:30)
+    function generateRandomStartTime() {
+      const hours = Math.floor(Math.random() * 24);
+      const minutes = Math.random() < 0.5 ? 0 : 30;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+
+    // Calculate end time (1 hour after start time)
+    function calculateEndTime(startTime) {
+      const [hours, minutes] = startTime.split(':').map(Number);
+      const endHours = (hours + 1) % 24;
+      return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+
+    // Initialize form with fixed date and random start time
+    function initializeForm() {
+      document.getElementById('date').value = FIXED_DATE;
+      document.getElementById('start').value = generateRandomStartTime();
+    }
+
+    // Initialize form when page loads
+    document.addEventListener('DOMContentLoaded', initializeForm);
+  </script>
+</body>
+</html>
