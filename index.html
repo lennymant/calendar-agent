@@ -251,9 +251,10 @@
       return String(Math.random()).slice(2);
     }
 
-    // Generate random start time in half-hourly intervals (00:00 to 23:30)
+    // Generate random start time in half-hourly intervals (6am to 9pm)
     function generateRandomStartTime() {
-      const hours = Math.floor(Math.random() * 24);
+      // Generate hours between 6 (6am) and 21 (9pm), inclusive
+      const hours = Math.floor(Math.random() * (21 - 6 + 1)) + 6;
       const minutes = Math.random() < 0.5 ? 0 : 30;
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     }
