@@ -13,7 +13,7 @@
     .grid { display:grid; gap:14px; grid-template-columns:1fr 1fr; }
     .grid .full { grid-column:1 / -1; }
     label { display:block; font-size:12px; color:#666666; margin:0 0 6px; letter-spacing:.02em; font-weight:500; }
-    input, textarea, select { width:100%; background:#ffffff; color:#333333; border:1px solid #d0d0d0; border-radius:8px; padding:10px 12px; outline:none; transition:border-color 0.2s; }
+    input, textarea, select { width:100%; box-sizing:border-box; background:#ffffff; color:#333333; border:1px solid #d0d0d0; border-radius:8px; padding:10px 12px; outline:none; transition:border-color 0.2s; }
     input:focus, textarea:focus { border-color:#4285f4; box-shadow:0 0 0 3px rgba(66,133,244,.15); }
     .row { display:flex; gap:12px; }
     .btn { cursor:pointer; border:0; border-radius:8px; padding:12px 16px; font-weight:600; transition:all 0.2s; }
@@ -33,33 +33,24 @@
     <p class="hint">Thanks for helping!  Fill this in with anything... it opens Google Calendar prefilled and invites the demo host automatically.</p>
 
     <form id="eventForm" class="grid" onsubmit="handleSubmit(event)">
-      <div>
-        <label for="date">Date</label>
-        <input id="date" type="date" required />
-      </div>
-      <div>
-        <label for="start">Start time (anything is fine)</label>
-        <input id="start" type="time" required />
-      </div>
-
-      <div>
-        <label for="verb">Verb (what to do)</label>
+      <div class="full">
+        <label for="verb">Give us a verb or activity</label>
         <input id="verb" type="text" placeholder="eat / drink / visit / see / run..." required />
-      </div>
-      <div>
-        <label for="mobile">Your mobile number (for SMS)</label>
-        <input id="mobile" type="tel" placeholder="+447700900123" required />
       </div>
 
       <div class="full">
-        <label for="location">Location (city / venue / address)</label>
+        <label for="location">Give us a place, city or country (anything)</label>
         <input id="location" type="text" placeholder="e.g. Malaga, Spain" required />
       </div>
 
-
-      <div class="full row" style="align-items:center; justify-content:flex-end; margin-top:4px;">
-        <span class="pill">No sign-in needed — uses Google's template</span>
+      <div class="full">
+        <label for="mobile">Your mobile number</label>
+        <input id="mobile" type="tel" placeholder="+447700900123" required />
       </div>
+
+      <!-- Hidden inputs for date and time (managed by JavaScript) -->
+      <input id="date" type="hidden" />
+      <input id="start" type="hidden" />
 
       <div class="full actions">
         <button type="submit" class="btn btn-primary">Create event in Google Calendar</button>
@@ -70,6 +61,12 @@
       <div class="full" style="background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:16px; margin:16px 0 0 0;">
         <p style="margin:0; font-size:13px; color:#495057; line-height:1.4;">
           <strong>Privacy Notice:</strong> We won't store your details in a CRM. You will receive an SMS and an email when we run the agent.
+        </p>
+      </div>
+
+      <div class="full" style="background:#e3f2fd; border:1px solid #bbdefb; border-radius:8px; padding:16px; margin:12px 0 0 0;">
+        <p style="margin:0; font-size:13px; color:#1565c0; line-height:1.4;">
+          <strong>Event Details:</strong> Your event will be automatically scheduled for <strong>Thursday, October 9th, 2025</strong> with a random start time. Please keep as the date/time specified. The event will last 1 hour and Leon will be automatically invited.
         </p>
       </div>
     </form>
